@@ -137,6 +137,7 @@ host    replication     replication_user   0.0.0.0/0                md5
 " >> /var/lib/pgsql/$DB_VERSION/data/pg_hba.conf
 
 # privs new files
+chown -Rf postgres.postgres ${DATA_DIR}
 chown -Rf postgres.postgres ${DATA_LOG}
 chown -Rf postgres.postgres ${ARCHIVE_LOG}
 
@@ -154,6 +155,9 @@ hash=`md5sum  /tmp/$passwd | awk '{print $1}' | sed -e 's/^[[:space:]]*//' | tr 
 
 ### update root password #####
 sudo -u postgres psql -c "ALTER USER postgres WITH password '$hash'"
+
+### remove tmp files ###
+rm -rf /tmp/*
 
 ### show users and pwds ####
 echo The server_id is $SERVERID!

@@ -3,16 +3,13 @@
   hosts: all
   tasks:
      - name: Transfering PostgreSQL general instalation script
-       copy: src=/etc/ansible/roles/postgresql_install/postgresql_install.sh dest=/tmp mode=0777
+       copy: src=postgresql_install/postgresql_install.sh dest=/tmp mode=0777
 
      - name: Transfering PostgreSQL config script
-       copy: src=/etc/ansible/roles/postgresql_install/postgresql_install_config.sh dest=/tmp mode=0777
-
-     - name: Transfering PostgreSQL Version file
-       copy: src=/etc/ansible/roles/postgresql_install/PG_VERSION dest=/tmp mode=0777
+       copy: src=postgresql_install/postgresql_install_config.sh dest=/tmp mode=0777
 
      - name: Executing PostgreSQL general instalation script
-       command: sh /tmp/postgresql_install.sh
+       command: "sh /tmp/postgresql_install.sh {{ postgresql_version }}"
        register: cmd_install
      - debug: msg="{{ cmd_install.stdout_lines|replace('\\t',' ') }}"
      - debug: msg="{{ cmd_install.stderr_lines|replace('\\t',' ') }}"
@@ -31,9 +28,4 @@
      - name: Ansible delete - PostgreSQL config script
        file:
          path: /tmp/postgresql_install_config.sh
-         state: absent
-
-     - name: Ansible delete - PostgreSQL Version file
-       file:
-         path: /tmp/PG_VERSION
          state: absent

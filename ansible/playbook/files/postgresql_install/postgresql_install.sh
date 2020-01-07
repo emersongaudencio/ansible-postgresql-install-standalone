@@ -2,7 +2,7 @@
 echo "HOSTNAME: " `hostname`
 echo "BEGIN - [`date +%d/%m/%Y" "%H:%M:%S`]"
 echo "##############"
-
+echo "$1" > /tmp/PG_VERSION
 PG_VERSION=$(cat /tmp/PG_VERSION)
 
 ##### FIREWALLD DISABLE ########################
