@@ -72,7 +72,7 @@
 
  PS: Just remember that you can do a single installation at the time or a group installation you inform the name of the group in the hosts' files instead of the host itself.
 
- The versions supported for this script are these between the round brackets (94,95,96,10,11).
+ The versions supported for this script are these between the round brackets (94,95,96,10,11,12).
 
 # Translation in Portuguese pt-br
 
@@ -147,4 +147,4 @@ sh run_postgresql_install.sh dbtest01 11
 
 Obs: Lembrando que tambem eh possivel fazer a instalacao para todo um grupo de servidor de uma soh vez, substituindo o nome do servidor pelo nome do grupo, que no nosso exemplo eh dbservers.
 
-Outra observacao sobre o script eh que as versoes que voce pode instalar sao essas aqui (94,95,96,10,11).
+Outra observacao sobre o script eh que as versoes que voce pode instalar sao essas aqui (94,95,96,10,11,12).
