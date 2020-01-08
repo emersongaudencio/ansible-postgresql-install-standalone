@@ -9,8 +9,13 @@ cd $SCRIPT_PATH
 VAR_HOST="$1"
 VAR_PG_VERSION="$2"
 
-### Ping host ####
-ansible -i $SCRIPT_PATH/hosts -m ping $VAR_HOST -v
+if [ "$VAR_PG_VERSION" -gt 0 -a "$VAR_HOST" != "" ]; then
+     echo "Sorry, this script must have fill it up the first parameter with the ansible hostname and the second parameter postgresql version, please have a look at README file for futher information!"
+     exit 1
+else
+  ### Ping host ####
+  ansible -i $SCRIPT_PATH/hosts -m ping $VAR_HOST -v
 
-### PG install ####
-ansible-playbook -v -i $SCRIPT_PATH/hosts -e "{postgresql_version: '$VAR_PG_VERSION'}" $SCRIPT_PATH/playbook/postgresql_install.yml -l $VAR_HOST
+  ### PG install ####
+  ansible-playbook -v -i $SCRIPT_PATH/hosts -e "{postgresql_version: '$VAR_PG_VERSION'}" $SCRIPT_PATH/playbook/postgresql_install.yml -l $VAR_HOST
+fi
