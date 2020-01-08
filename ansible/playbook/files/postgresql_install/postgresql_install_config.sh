@@ -1,5 +1,4 @@
 #!/bin/bash
-### give it random number to serverid on MariaDB
 # To generate a random number in a UNIX or Linux shell, the shell maintains a shell variable named RANDOM. Each time this variable is read, a random number between 0 and 32767 is generated.
 SERVERID=$(($RANDOM))
 
@@ -7,45 +6,54 @@ SERVERID=$(($RANDOM))
 MEM_TOTAL=$(expr $(($(cat /proc/meminfo | grep MemTotal | awk '{print $2}') / 10)) \* 10 / 1024 / 1024)
 
 ### get amount of memory who will be reserved to effective_cache_size variable
-MEM_EFCS=$(expr $(($(cat /proc/meminfo | grep MemTotal | awk '{print $2}') / 10)) \* 7 / 1024 / 1024)
+MEM_EFCS=$(expr $(($(cat /proc/meminfo | grep MemTotal | awk '{print $2}') / 10)) \* 7 / 1024)
 
 ### get amount of memory who will be reserved to shared_buffers variable
-MEM_SHBM=$(expr $(($(cat /proc/meminfo | grep MemTotal | awk '{print $2}') / 10)) \* 2 / 1024 / 1024)
+MEM_SHBM=$(expr $(($(cat /proc/meminfo | grep MemTotal | awk '{print $2}') / 10)) \* 2 / 1024)
 
 ### get the number of cpu's to estimate how many innodb instances will be enough for it. ###
 NR_CPUS=$(cat /proc/cpuinfo | awk '/^processor/{print $3}' | wc -l)
 
-DB_VERSION=`psql --version | egrep -o '[0-9]{1,}\.[0-9]{1,}'`
-pgsql_version=`psql --version |awk {'print $3'}| awk -F "." {'print $1$2'}`
+PG_VERSION=$(cat /tmp/PG_VERSION)
+
+if [ "$PG_VERSION" -gt 9 -a "$PG_VERSION" -lt 13 ]; then
+  DB_VERSION=`psql --version |awk {'print $3'}| awk -F "." {'print $1'}`
+  pgsql_version=`psql --version |awk {'print $3'}| awk -F "." {'print $1'}`
+elif [ "$PG_VERSION" -gt 93 -a "$PG_VERSION" -lt 97 ]; then
+  DB_VERSION=`psql --version | egrep -o '[0-9]{1,}\.[0-9]{1,}'`
+  pgsql_version=`psql --version |awk {'print $3'}| awk -F "." {'print $1$2'}`
+fi
+
+if [ "$pgsql_version" == "94" ]; then
+  PG_BLOCK="checkpoint_segments = 64" 
+else
+  PG_BLOCK="min_wal_size = 2GB
+max_wal_size = 4GB"
+fi
 
 if [ $MEM_TOTAL -lt 8 ]
   then
    MEM_MWM="512MB"
-   CPS="16"
   elif [ $MEM_TOTAL -gt 8 ] && [ $MEM_TOTAL -lt 24 ]
   then
     MEM_MWM="1024MB"
-    CPS="32"
   elif [ $MEM_TOTAL -gt 25 ]
   then
     MEM_MWM="2048MB"
-    CPS="64"
 fi
 
-if [ $MEM_EFCS -lt 0 ]
+if [ $MEM_EFCS -gt 128 ]
   then
-   MEM_EFCS="1GB"
-  elif [ $MEM_EFCS -gt 1 ]
-  then
-   MEM_EFCS="${MEM_EFCS}GB"
+   MEM_EFCS="${MEM_EFCS}MB"
+else
+   MEM_EFCS="128MB"
 fi
 
-if [ $MEM_SHBM -lt 0 ]
+if [ $MEM_SHBM -gt 128 ]
   then
-   MEM_SHBM="1GB"
-  elif [ $MEM_SHBM -gt 1 ]
-  then
-   MEM_SHBM="${MEM_SHBM}GB"
+   MEM_SHBM="${MEM_SHBM}MB"
+else
+   MEM_SHBM="128MB"
 fi
 
 ### remove old datadir ###
@@ -79,7 +87,11 @@ then
 fi
 
 ### initdb for deploy a new db fresh and clean ###
-/usr/pgsql-$DB_VERSION/bin/postgresql$pgsql_version-setup initdb
+if [ "$PG_VERSION" -gt 9 -a "$PG_VERSION" -lt 13 ]; then
+ /usr/pgsql-$DB_VERSION/bin/postgresql-$pgsql_version-setup initdb
+elif [ "$PG_VERSION" -gt 93 -a "$PG_VERSION" -lt 97 ]; then
+ /usr/pgsql-$DB_VERSION/bin/postgresql$pgsql_version-setup initdb
+fi
 systemctl enable postgresql-$DB_VERSION
 systemctl start postgresql-$DB_VERSION
 sleep 5
@@ -110,7 +122,7 @@ default_statistics_target = 100
 random_page_cost = 1.1
 effective_io_concurrency = 200
 work_mem = 16777kB
-checkpoint_segments = $CPS
+$PG_BLOCK
 
 ### enable archive mode ####
 archive_mode = on
@@ -144,8 +156,11 @@ chown -Rf postgres.postgres ${ARCHIVE_LOG}
 # restart postgresql
 systemctl stop postgresql-$DB_VERSION
 sleep 5
-systemctl start postgresql-$DB_VERSION
-sleep 5
+systemctl start postgresql-$DB_VERSION; ec=$?
+if [ $ec -ne 0 ]; then
+     echo "Service startup failed - existing."
+     exit 1
+else
 
 ### generate root passwd #####
 passwd="$SERVERID-PG"
@@ -162,3 +177,7 @@ rm -rf /tmp/*
 ### show users and pwds ####
 echo The server_id is $SERVERID!
 echo The postgres password is $hash
+
+touch /var/lib/pgsql/.psql_history
+chown postgres: /var/lib/pgsql/.psql_history
+fi

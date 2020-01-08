@@ -9,4 +9,6 @@
 ## 10.25.1.57
 
 [dbservers]
-dbtest01 ansible_ssh_host=172.16.122.135
+dbpg10 ansible_ssh_host=172.16.122.141
+dbpg11 ansible_ssh_host=172.16.122.142
+dbpg12 ansible_ssh_host=172.16.122.143
