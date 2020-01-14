@@ -9,13 +9,23 @@ cd $SCRIPT_PATH
 VAR_HOST="$1"
 VAR_PG_VERSION="$2"
 
+if [ "${VAR_HOST}" == '' ] ; then
+  echo "No host specified. Please have a look at README file for futher information!"
+  exit 1
+fi
+
+if [ "${VAR_PG_VERSION}" == '' ] ; then
+  echo "No PostgreSQL version specified. Please have a look at README file for futher information!"
+  exit 1
+fi
+
 if [ "$VAR_PG_VERSION" -gt 0 -a "$VAR_HOST" != "" ]; then
   ### Ping host ####
   ansible -i $SCRIPT_PATH/hosts -m ping $VAR_HOST -v
-  
+
   ### PG install ####
   ansible-playbook -v -i $SCRIPT_PATH/hosts -e "{postgresql_version: '$VAR_PG_VERSION'}" $SCRIPT_PATH/playbook/postgresql_install.yml -l $VAR_HOST
 else
   echo "Sorry, this script must have 2 parameters to run. So first of all you have to fill up the first parameter with the ansible hostname and the second parameter postgresql version, please have a look at README file for futher information!"
-  exit 1 
+  exit 1
 fi
