@@ -75,6 +75,12 @@
  ```
  sh run_postgresql_install.sh dbpg11 11
  ```
+ ### Parameters specification:
+ #### run_postgresql_install.sh
+ Parameter  | Value           | Mandatory | Order | Accepted values
+ ------------ | ------------- | ------------- | ------------- | -------------
+ host | dbpg11 | Yes | 1 | hosts who are placed inside of the hosts file
+ db postgresql version | 11 | Yes | 2 | 94,95,96,10,11,12
 
  PS: Just remember that you can do a single installation at the time or a group installation you inform the name of the group in the hosts' files instead of the host itself.
 
