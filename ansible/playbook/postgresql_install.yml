@@ -1,5 +1,6 @@
 ---
 - name: Standalone PostgreSQL Installation
+  gather_facts: false
   hosts: all
   tasks:
      - name: Transfering PostgreSQL general instalation script
