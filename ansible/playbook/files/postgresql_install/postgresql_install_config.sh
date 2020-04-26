@@ -25,7 +25,7 @@ elif [ "$PG_VERSION" -gt 93 -a "$PG_VERSION" -lt 97 ]; then
 fi
 
 if [ "$pgsql_version" == "94" ]; then
-  PG_BLOCK="checkpoint_segments = 64" 
+  PG_BLOCK="checkpoint_segments = 64"
 else
   PG_BLOCK="min_wal_size = 2GB
 max_wal_size = 4GB"
@@ -64,7 +64,7 @@ DATA_DIR="/var/lib/pgsql/datadir"
 DATA_LOG="/var/lib/pgsql/logdir"
 ARCHIVE_LOG="/var/lib/pgsql/archivelog"
 
-# create directories for mysql datadir and datalog
+# create directories for postgresql datadir and datalog
 if [ ! -d ${DATA_DIR} ]
 then
     mkdir -p ${DATA_DIR}
@@ -76,14 +76,14 @@ if [ ! -d ${DATA_LOG} ]
 then
     mkdir -p ${DATA_LOG}
     chmod 755 ${DATA_LOG}
-    chown -Rf postgres.postgres {DATA_LOG}
+    chown -Rf postgres.postgres ${DATA_LOG}
 fi
 
 if [ ! -d ${ARCHIVE_LOG} ]
 then
     mkdir -p ${ARCHIVE_LOG}
     chmod 755 ${ARCHIVE_LOG}
-    chown -Rf postgres.postgres {ARCHIVE_LOG}
+    chown -Rf postgres.postgres ${ARCHIVE_LOG}
 fi
 
 ### initdb for deploy a new db fresh and clean ###
@@ -143,9 +143,27 @@ log_statement = 'ddl'
 " > /var/lib/pgsql/$DB_VERSION/data/server.conf
 
 echo "
+# PostgreSQL Client Authentication Configuration File
+# ===================================================
+#
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+
+# local is for Unix domain socket connections only
+local   all             postgres                                peer
+local   all             all                                     md5
+# IPv4 local connections:
+host    all             all             127.0.0.1/32            md5
+# IPv6 local connections:
+host    all             all             ::1/128                 md5
+# Allow replication connections from localhost, by a user with the
+# replication privilege.
+local   replication     all                                     peer
+host    replication     all             127.0.0.1/32            ident
+host    replication     all             ::1/128                 ident
+
 # pg_hba.conf
-host    all             all                0.0.0.0/0                md5
-host    replication     replication_user   0.0.0.0/0                md5
+host    all             all                0.0.0.0/0             md5
+host    replication     replication_user   0.0.0.0/0             md5
 " >> /var/lib/pgsql/$DB_VERSION/data/pg_hba.conf
 
 # privs new files
@@ -158,11 +176,11 @@ systemctl stop postgresql-$DB_VERSION
 sleep 5
 systemctl start postgresql-$DB_VERSION; ec=$?
 if [ $ec -ne 0 ]; then
-     echo "Service startup failed - existing."
+     echo "Service startup failed!"
      exit 1
 else
 
-### generate root passwd #####
+### generate postgres passwd #####
 passwd="$SERVERID-PG"
 touch /tmp/$passwd
 echo $passwd > /tmp/$passwd
